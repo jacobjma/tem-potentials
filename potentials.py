@@ -362,7 +362,7 @@ class ParameterizedPotential(object):
 
         dx, dy, dz = self.voxel_size()
         gx, gy, gz = self.fourier_frequencies()
-        g = np.sqrt(squared_magnitude_grid(gx / dz, gy / dy, gz / dz))
+        g = np.sqrt(squared_magnitude_grid(gx / dx, gy / dy, gz / dz))
 
         if g_cut is None:
             g_cut = np.sqrt((1 / dx ** 2 + 1 / dy ** 2 + 1 / dz ** 2)) / 4
@@ -378,7 +378,14 @@ class ParameterizedPotential(object):
             y = atom.y / dy
             z = atom.z / dz
 
+            #import matplotlib.pyplot as plt
+            #plt.imshow(g[0])
+            #plt.show()
+
+            #sss np.exp(-2 * np.pi * 1j * (gx * x + gy * y + gz * z))
+
             f += splines(g) * utils.interpolated_translation(gx, gy, gz, x, y, z)
+
         return f
 
     def calc_from_scattering(self, g_cut=None, n_nodes=50):

@@ -41,7 +41,7 @@ def get_ae_potential(atoms, h=0.02):
     atoms.get_potential_energy()
 
     ps2ae = PS2AE(atoms.calc, h=h)
-    return ps2ae.get_electrostatic_potential(ae=True, rcgauss=.02)
+    return ps2ae.get_electrostatic_potential(ae=True)
 
 
 def get_scattering_factor(v, atoms):
@@ -80,7 +80,6 @@ if __name__ == "__main__":
     niter_basin = 100
     niter_local = 1000
     step_size = 20
-    h = 0.02
     folder = 'fit_gpaw_data/'
 
     xmin = [1e-6] * 12
@@ -88,17 +87,15 @@ if __name__ == "__main__":
 
     symbol = chemical_symbols[Z]
 
-    atoms = Atoms(symbol, [(0, 0, 0)])
-    atoms.center(vacuum=2)
+    atoms = Atoms(symbol, [(0, 0, 0)], pbc=True)
+    atoms.center(vacuum = 4)
 
-    v = get_ae_potential(atoms, h=h)
+    v = get_ae_potential(atoms)
     f, g = get_scattering_factor(v, atoms)
 
-    print(g)
-
     f0 = f[0]
-    f = f[:len(g) // 2]
-    g = g[:len(g) // 2]
+    f = f[1:len(g) // 2]
+    g = g[1:len(g) // 2]
 
     x0 = [ParameterizedPotential('kirkland').parameters[Z][key] for key in
           ('a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'd1', 'd2', 'd3')]

@@ -30,7 +30,7 @@ def _nearest_neighbor(x):
         dxa, dxb = 1, 0
     else:
         xa, xb = np.floor(x), np.ceil(x)
-        dxa, dxb = x - xa, xb - x
+        dxb, dxa = x - xa, xb - x
 
     return xa, xb, dxa, dxb
 
@@ -40,13 +40,16 @@ def interpolated_translation(gx, gy, gz, x, y, z):
     ya, yb, dya, dyb = _nearest_neighbor(y)
     za, zb, dza, dzb = _nearest_neighbor(z)
 
-    f = (dxa * dya * dza * np.exp(2 * np.pi * 1j * (gx * xa + gy * ya + gz * za)) +
-         dxb * dya * dza * np.exp(2 * np.pi * 1j * (gx * xb + gy * ya + gz * za)) +
-         dxa * dyb * dza * np.exp(2 * np.pi * 1j * (gx * xa + gy * yb + gz * za)) +
-         dxa * dya * dzb * np.exp(2 * np.pi * 1j * (gx * xa + gy * ya + gz * zb)) +
-         dxb * dyb * dza * np.exp(2 * np.pi * 1j * (gx * xb + gy * yb + gz * za)) +
-         dxb * dya * dzb * np.exp(2 * np.pi * 1j * (gx * xb + gy * ya + gz * zb)) +
-         dxa * dyb * dzb * np.exp(2 * np.pi * 1j * (gx * xa + gy * yb + gz * zb)) +
-         dxb * dyb * dzb * np.exp(2 * np.pi * 1j * (gx * xb + gy * yb + gz * zb)))
+    # print(xa, xb, ya, yb)
+    # sss
+
+    f = (dxa * dya * dza * np.exp(-2 * np.pi * 1j * (gx * xa + gy * ya + gz * za)) +
+         dxb * dya * dza * np.exp(-2 * np.pi * 1j * (gx * xb + gy * ya + gz * za)) +
+         dxa * dyb * dza * np.exp(-2 * np.pi * 1j * (gx * xa + gy * yb + gz * za)) +
+         dxa * dya * dzb * np.exp(-2 * np.pi * 1j * (gx * xa + gy * ya + gz * zb)) +
+         dxb * dyb * dza * np.exp(-2 * np.pi * 1j * (gx * xb + gy * yb + gz * za)) +
+         dxb * dya * dzb * np.exp(-2 * np.pi * 1j * (gx * xb + gy * ya + gz * zb)) +
+         dxa * dyb * dzb * np.exp(-2 * np.pi * 1j * (gx * xa + gy * yb + gz * zb)) +
+         dxb * dyb * dzb * np.exp(-2 * np.pi * 1j * (gx * xb + gy * yb + gz * zb)))
 
     return f

@@ -34,13 +34,13 @@ class RandomDisplacementBounds(object):
         return xnew
 
 
-def get_ae_potential(atoms, h=0.02):
-    calc = GPAW(hund=True, eigensolver='cg', h=.1)
+def get_ae_potential(atoms):
+    calc = GPAW(hund=True, eigensolver='cg', h=.2)
     atoms.set_calculator(calc)
 
     atoms.get_potential_energy()
 
-    ps2ae = PS2AE(atoms.calc, h=h)
+    ps2ae = PS2AE(atoms.calc)
     return ps2ae.get_electrostatic_potential(ae=True)
 
 
@@ -77,34 +77,38 @@ def merge_parameter_files(name='GPAW.txt', folder='fit_gpaw_data/'):
 if __name__ == "__main__":
     Z = int(sys.argv[1])
 
-    niter_basin = 100
+    niter_basin = 1
     niter_local = 1000
-    step_size = 20
+    step_size = .05
     folder = 'fit_gpaw_data/'
 
-    xmin = [1e-6] * 12
-    xmax = [np.inf] * 12
+    xmin = [0] * 13
+    xmax = [25] * 13
 
     symbol = chemical_symbols[Z]
 
     atoms = Atoms(symbol, [(0, 0, 0)], pbc=True)
-    atoms.center(vacuum = 4)
+    atoms.center(vacuum=7)
 
     v = get_ae_potential(atoms)
     f, g = get_scattering_factor(v, atoms)
 
-    f0 = f[0]
-    f = f[1:len(g) // 2]
-    g = g[1:len(g) // 2]
+    kirkland = ParameterizedPotential('kirkland')
 
-    x0 = [ParameterizedPotential('kirkland').parameters[Z][key] for key in
-          ('a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'd1', 'd2', 'd3')]
+    f0 = kirkland.scattering_factor(Z)(0)
 
-    func = lambda a, b, c, d: (a[0] / (b[0] + g ** 2) + c[0] * np.exp(-d[0] * g ** 2) +
-                               a[1] / (b[1] + g ** 2) + c[1] * np.exp(-d[1] * g ** 2) +
-                               a[2] / (b[2] + g ** 2) + c[2] * np.exp(-d[2] * g ** 2))
+    f = f[0:len(g) // 2]
+    g = g[0:len(g) // 2]
+    f[0] = f0
 
-    error = lambda x: sum((func(x[:3], x[3:6], x[6:9], x[9:12]) - f) ** 2)
+    x0 = [kirkland.parameters[Z][key] for key in
+          ('a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'd1', 'd2', 'd3')] + [0]
+
+    func = lambda a, b, c, d, e: (a[0] / (b[0] + g ** 2) + c[0] * np.exp(-d[0] * g ** 2) +
+                                  a[1] / (b[1] + g ** 2) + c[1] * np.exp(-d[1] * g ** 2) +
+                                  a[2] / (b[2] + g ** 2) + c[2] * np.exp(-d[2] * g ** 2) + 0*e)
+
+    error = lambda x: sum((func(x[:3], x[3:6], x[6:9], x[9:12], x[12]) - f) ** 2 / np.log((g + g[1]) / (g[1] / 2)) ** 2)
 
     take_step = RandomDisplacementBounds(xmin, xmax, step_size)
 
@@ -115,8 +119,8 @@ if __name__ == "__main__":
     result = basinhopping(error, x0, niter=niter_basin, minimizer_kwargs=minimizer_kwargs, take_step=take_step,
                           disp=True)
 
-    a, b, c, d = result.x[:3], result.x[3:6], result.x[6:9], result.x[9:12]
-    rms_error = np.sqrt(np.sum((func(a, b, c, d) - f) ** 2) / len(f))
+    a, b, c, d, e = result.x[:3], result.x[3:6], result.x[6:9], result.x[9:12], result.x[12]
+    rms_error = np.sqrt(np.sum((func(a, b, c, d, e) - f) ** 2) / len(f))
 
     with open(folder + symbol + '.txt', 'w') as text_file:
         print('from GPAW', file=text_file)

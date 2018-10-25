@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     func = lambda a, b, c, d, e: (a[0] / (b[0] + g ** 2) + c[0] * np.exp(-d[0] * g ** 2) +
                                   a[1] / (b[1] + g ** 2) + c[1] * np.exp(-d[1] * g ** 2) +
-                                  a[2] / (b[2] + g ** 2) + c[2] * np.exp(-d[2] * g ** 2) + 0*e)
+                                  a[2] / (b[2] + g ** 2) + c[2] * np.exp(-d[2] * g ** 2))
 
     error = lambda x: sum((func(x[:3], x[3:6], x[6:9], x[9:12], x[12]) - f) ** 2 / np.log((g + g[1]) / (g[1] / 2)) ** 2)
 

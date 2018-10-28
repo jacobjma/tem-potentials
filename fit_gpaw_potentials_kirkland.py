@@ -82,7 +82,7 @@ if __name__ == "__main__":
     step_size = .05
     folder = 'fit_gpaw_data/'
 
-    xmin = [0] * 12
+    xmin = [1e-12] * 12
     xmax = [25] * 12
 
     symbol = chemical_symbols[Z]

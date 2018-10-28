@@ -82,8 +82,8 @@ if __name__ == "__main__":
     step_size = .05
     folder = 'fit_gpaw_data/'
 
-    xmin = [0] * 13
-    xmax = [25] * 13
+    xmin = [0] * 12
+    xmax = [25] * 12
 
     symbol = chemical_symbols[Z]
 
@@ -102,13 +102,20 @@ if __name__ == "__main__":
     f[0] = f0
 
     x0 = [kirkland.parameters[Z][key] for key in
-          ('a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'd1', 'd2', 'd3')] + [0]
+          ('a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'd1', 'd2', 'd3')]
 
-    func = lambda a, b, c, d, e: (a[0] / (b[0] + g ** 2) + c[0] * np.exp(-d[0] * g ** 2) +
-                                  a[1] / (b[1] + g ** 2) + c[1] * np.exp(-d[1] * g ** 2) +
-                                  a[2] / (b[2] + g ** 2) + c[2] * np.exp(-d[2] * g ** 2))
+    func = lambda a, b, c, d: (a[0] / (b[0] + g ** 2) + c[0] * np.exp(-d[0] * g ** 2) +
+                               a[1] / (b[1] + g ** 2) + c[1] * np.exp(-d[1] * g ** 2) +
+                               a[2] / (b[2] + g ** 2) + c[2] * np.exp(-d[2] * g ** 2))
 
-    error = lambda x: sum((func(x[:3], x[3:6], x[6:9], x[9:12], x[12]) - f) ** 2 / np.log((g + g[1]) / (g[1] / 2)) ** 2)
+    dg = g[1] - g[0]
+    min_weight = .05
+    weights = (np.log((g + dg) / dg) + min_weight)
+
+    if np.any(np.isnan(weights)):
+        raise RuntimeError('nan in weights')
+
+    error = lambda x: sum((func(x[:3], x[3:6], x[6:9], x[9:12]) - f) ** 2 / weights ** 2)
 
     take_step = RandomDisplacementBounds(xmin, xmax, step_size)
 
@@ -119,8 +126,8 @@ if __name__ == "__main__":
     result = basinhopping(error, x0, niter=niter_basin, minimizer_kwargs=minimizer_kwargs, take_step=take_step,
                           disp=True)
 
-    a, b, c, d, e = result.x[:3], result.x[3:6], result.x[6:9], result.x[9:12], result.x[12]
-    rms_error = np.sqrt(np.sum((func(a, b, c, d, e) - f) ** 2) / len(f))
+    a, b, c, d = result.x[:3], result.x[3:6], result.x[6:9], result.x[9:12]
+    rms_error = np.sqrt(np.sum((func(a, b, c, d) - f) ** 2) / len(f))
 
     with open(folder + symbol + '.txt', 'w') as text_file:
         print('from GPAW', file=text_file)
